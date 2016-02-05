@@ -87,7 +87,11 @@ def kill_recording_process():
 
 
 def main():
-    record_sys_status_to_log(10086)
+    if sys.argv[1]='-r':
+	bytes_per_second =int(sys.argv[2])
+	record_sys_status_to_log(bytes_per_second)
+    else:
+        record_sys_status_to_log(10086)
     #Run 5 mins
     time.sleep(300)
     kill_recording_process()
