@@ -4,7 +4,7 @@ import time
 import os
 import errno
 
-path ='/var/log/td-agent/test_results'
+path ='/var/log/td-agent/test_results/'
 
 iostat_file='iostat.log'
 iostat_cmd='iostat -dkxt 1 >> '+path+iostat_file+' &'
