@@ -37,20 +37,33 @@ def mkdir_p(path):
         else:
             raise
 
+def touchFiles():
+    if not os.path.isfile(path+iostat_file):
+        open(path+iostat_file, "a+").close()
+    if not os.path.isfile(path+vmstat_file):
+        open(path+vmstat_file, "a+").close()
+    if not os.path.isfile(path+dstat_file):
+        open(path+dstat_file, "a+").close()
+    if not os.path.isfile(path+free_file):
+        open(path+free_file, "a+").close()
+    if not os.path.isfile(path+top_file):
+        open(path+top_file, "a+").close()
+
 def record_sys_status_to_log():
     mkdir_p(path)
-    subprocess.call(iostat_cmd)
-    subprocess.call(vmstat_cmd)
-    subprocess.call(dstat_cmd)
-    subprocess.call(free_cmd)
-    subprocess.call(top_cmd)
+    touchFiles()
+    subprocess.call(iostat_cmd, shell=True)
+    subprocess.call(vmstat_cmd, shell=True)
+    subprocess.call(dstat_cmd, shell=True)
+    subprocess.call(free_cmd, shell=True)
+    #subprocess.call(top_cmd, shell=True)
 
 def kill_recording_process():
-    subprocess.call(iostat_kill)
-    subprocess.call(vmstat_kill)
-    subprocess.call(dstat_kill)
-    subprocess.call(free_kill)
-    subprocess.call(top_kill)
+    subprocess.call(iostat_kill, shell=True)
+    subprocess.call(vmstat_kill, shell=True)
+    subprocess.call(dstat_kill, shell=True)
+    subprocess.call(free_kill, shell=True)
+    #subprocess.call(top_kill, shell=True)
 
 
 
