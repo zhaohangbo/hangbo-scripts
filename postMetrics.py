@@ -3,7 +3,10 @@ import requests
 import json
 import sys
 import time
+import os
+import errno
 import datetime
+import subprocess
 messages_per_sec= 100 #  messages/sec   how many messages you sent per second
 
 
@@ -66,7 +69,6 @@ def post_metrics_bytes_per_second(bytes_per_second, msg_of_specific_bytes):
 
 def post_metrics_numbers_per_second(numbers_per_second, intput_json_data):
     if intput_json_data is None:
-	print('intput_json_data is none!!!',intput_json_data,'Use default json data')
         intput_json_data= data
     time1 = datetime.datetime.now()
     for i in range(0,numbers_per_second):
@@ -85,16 +87,103 @@ def post_metrics_numbers_per_second(numbers_per_second, intput_json_data):
     else:
         print('can not post'+numbers_per_second+'in 1 seconds , totally needs'+ str(1-ms_left/1000.0)+'seconds')
 
+path ='/var/log/td-agent/test_results/'
+
+iostat_file='iostat.log'
+iostat_cmd='iostat -dkxt 1 >> '+path+iostat_file+' &'
+iostat_kill="pkill -f 'iostat -dkxt 1'"
+
+vmstat_file='vmstat.log'
+vmstat_cmd ='vmstat 1 >> '+path+vmstat_file+' &'
+vmstat_kill="pkill -f 'vmstat 1'"
+
+dstat_file='dstat.log'
+dstat_cmd ='dstat >> '+path+dstat_file+' &'
+dstat_kill="pkill -f 'dstat'"
+
+free_file='free.log'
+free_cmd ='free >> '+path+free_file+' &'
+free_kill="pkill -f  'free'"
+
+top_file='top.log'
+top_cmd ='top -c >> '+path+top_file+' &'
+top_kill="pkill -f  'top -c'"
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+def touchFiles(bytes_per_second):
+    bytes_per_second=str(bytes_per_second)
+    if not os.path.isfile(path + iostat_file + bytes_per_second):
+        open(path+iostat_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+vmstat_file + bytes_per_second):
+        open(path+vmstat_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+dstat_file + bytes_per_second):
+        open(path+dstat_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+free_file + bytes_per_second):
+        open(path+free_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+top_file + bytes_per_second):
+        open(path+top_file + bytes_per_second, "a+").close()
+
+def form_cmd(bytes_per_second):
+    bytes_per_second=str(bytes_per_second)
+    global iostat_cmd
+    iostat_cmd='iostat -dkxt 1 >> ' + path + iostat_file + bytes_per_second +' &'
+    global vmstat_cmd
+    vmstat_cmd ='vmstat 1 >> ' + path + vmstat_file + bytes_per_second +' &'
+    global dstat_cmd
+    dstat_cmd ='dstat >> ' + path + dstat_file + bytes_per_second +' &'
+    global free_cmd
+    free_cmd ='free >> ' + path+free_file + bytes_per_second +' &'
+    global top_cmd
+    top_cmd ='top -c >> '+ path + top_file + bytes_per_second +' &'
+    
+
+def record_sys_status_to_log(bytes_per_second):
+    bytes_per_second = str(bytes_per_second)
+    mkdir_p(path)
+    touchFiles(bytes_per_second)
+    form_cmd(bytes_per_second)
+    print(iostat_cmd,vmstat_cmd,dstat_cmd,free_cmd)
+	
+    subprocess.call(iostat_cmd, shell=True)
+    subprocess.call(vmstat_cmd, shell=True)
+    subprocess.call(dstat_cmd, shell=True)
+    subprocess.call(free_cmd, shell=True)
+    #subprocess.call(top_cmd, shell=True)
+
+def kill_recording_process():
+    subprocess.call(iostat_kill, shell=True)
+    subprocess.call(vmstat_kill, shell=True)
+    subprocess.call(dstat_kill, shell=True)
+    subprocess.call(free_kill, shell=True)
+    #subprocess.call(top_kill, shell=True)
+
 def main():
   if len(sys.argv) <= 1:
     print("Usage: postMetrics -r <bytes/seconds> or -n <numbersOfMsg/second> with -j <json_content>")
     sys.exit(-1)
 
   if sys.argv[1] == '-r':
-      bytes_per_second =sys.argv[2]
+      bytes_per_second =int(sys.argv[2])
       msg_of_specific_bytes = get_msg_of_specific_bytes(bytes_per_second)
-      while True:
+
+      record_sys_status_to_log(bytes_per_second)
+      begin_time   = time.time()
+      exec_time_left=time.time() - begin_time
+
+      while exec_time_left < 300:
          post_metrics_bytes_per_second(bytes_per_second,msg_of_specific_bytes)
+	 exec_time_left= time.time() - begin_time
+         print('exec_time_left:',exec_time_left)
+      kill_recording_process()
+
   elif sys.argv[1] == '-n':
       numbers_per_second =int(sys.argv[2])
       j_content = None
@@ -109,8 +198,15 @@ def main():
           else:
               print("Usage: postMetrics -r <bytes/seconds> or -n <numbersOfMsg/second> or -j <json_content>")
 
-      while True:
+      record_sys_status_to_log(record_sys_status_to_log)
+      begin_time   = time.time()
+      exec_time_left=time.time() - begin_time
+      #Run 5 mins
+      while exec_time_left < 300:
           post_metrics_numbers_per_second(numbers_per_second, j_content)
+	  exec_time_left= time.time() - begin_time
+	  print('exec_time_left:',exec_time_left)
+      kill_recording_process()
 
 
 if __name__ == "__main__":

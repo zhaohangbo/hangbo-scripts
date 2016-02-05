@@ -37,21 +37,40 @@ def mkdir_p(path):
         else:
             raise
 
-def touchFiles():
-    if not os.path.isfile(path+iostat_file):
-        open(path+iostat_file, "a+").close()
-    if not os.path.isfile(path+vmstat_file):
-        open(path+vmstat_file, "a+").close()
-    if not os.path.isfile(path+dstat_file):
-        open(path+dstat_file, "a+").close()
-    if not os.path.isfile(path+free_file):
-        open(path+free_file, "a+").close()
-    if not os.path.isfile(path+top_file):
-        open(path+top_file, "a+").close()
+def touchFiles(bytes_per_second):
+    bytes_per_second=str(bytes_per_second)
+    if not os.path.isfile(path + iostat_file + bytes_per_second):
+        open(path+iostat_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+vmstat_file + bytes_per_second):
+        open(path+vmstat_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+dstat_file + bytes_per_second):
+        open(path+dstat_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+free_file + bytes_per_second):
+        open(path+free_file + bytes_per_second, "a+").close()
+    if not os.path.isfile(path+top_file + bytes_per_second):
+        open(path+top_file + bytes_per_second, "a+").close()
 
-def record_sys_status_to_log():
+def form_cmd(bytes_per_second):
+    bytes_per_second=str(bytes_per_second)
+    global iostat_cmd
+    iostat_cmd='iostat -dkxt 1 >> ' + path + iostat_file + bytes_per_second +' &'
+    global vmstat_cmd
+    vmstat_cmd ='vmstat 1 >> ' + path + vmstat_file + bytes_per_second +' &'
+    global dstat_cmd
+    dstat_cmd ='dstat >> ' + path + dstat_file + bytes_per_second +' &'
+    global free_cmd
+    free_cmd ='free >> ' + path+free_file + bytes_per_second +' &'
+    global top_cmd
+    top_cmd ='top -c >> '+ path + top_file + bytes_per_second +' &'
+
+
+def record_sys_status_to_log(bytes_per_second):
+    bytes_per_second = str(bytes_per_second)
     mkdir_p(path)
-    touchFiles()
+    touchFiles(bytes_per_second)
+    form_cmd(bytes_per_second)
+    print(iostat_cmd,vmstat_cmd,dstat_cmd,free_cmd)
+
     subprocess.call(iostat_cmd, shell=True)
     subprocess.call(vmstat_cmd, shell=True)
     subprocess.call(dstat_cmd, shell=True)
@@ -68,7 +87,7 @@ def kill_recording_process():
 
 
 def main():
-    record_sys_status_to_log()
+    record_sys_status_to_log(10086)
     #Run 5 mins
     time.sleep(300)
     kill_recording_process()
