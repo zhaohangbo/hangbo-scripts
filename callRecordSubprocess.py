@@ -38,40 +38,63 @@ def mkdir_p(path):
         else:
             raise
 
-def touchFiles(bytes_per_second):
-    bytes_per_second=str(bytes_per_second)
-    if not os.path.isfile(path + iostat_file + bytes_per_second):
-        open(path+iostat_file + bytes_per_second, "a+").close()
-    if not os.path.isfile(path+vmstat_file + bytes_per_second):
-        open(path+vmstat_file + bytes_per_second, "a+").close()
-    if not os.path.isfile(path+dstat_file + bytes_per_second):
-        open(path+dstat_file + bytes_per_second, "a+").close()
-    if not os.path.isfile(path+free_file + bytes_per_second):
-        open(path+free_file + bytes_per_second, "a+").close()
-    if not os.path.isfile(path+top_file + bytes_per_second):
-        open(path+top_file + bytes_per_second, "a+").close()
+def touchFiles(bytes_per_second , postfix):
+    bytes_per_second = str(bytes_per_second)
+    postfix = str(postfix)
+    if not os.path.isfile(path + iostat_file + bytes_per_second + postfix):
+        open(path+iostat_file + bytes_per_second + postfix, "a+").close()
+    if not os.path.isfile(path+vmstat_file + bytes_per_second + postfix):
+        open(path+vmstat_file + bytes_per_second + postfix, "a+").close()
+    if not os.path.isfile(path+dstat_file + bytes_per_second + postfix):
+        open(path+dstat_file + bytes_per_second + postfix, "a+").close()
+    if not os.path.isfile(path+free_file + bytes_per_second + postfix):
+        open(path+free_file + bytes_per_second + postfix, "a+").close()
+    if not os.path.isfile(path+top_file + bytes_per_second + postfix):
+        open(path+top_file + bytes_per_second + postfix, "a+").close()
 
-def form_cmd(bytes_per_second):
+def form_cmd_r(bytes_per_second):
     bytes_per_second=str(bytes_per_second)
     global iostat_cmd
-    iostat_cmd='iostat -dkxt 1 >> ' + path + iostat_file + bytes_per_second +' &'
+    iostat_cmd='iostat -dkxt 1 >> ' + path + iostat_file + bytes_per_second+'_r_' +' &'
     global vmstat_cmd
-    vmstat_cmd ='vmstat 1 >> ' + path + vmstat_file + bytes_per_second +' &'
+    vmstat_cmd ='vmstat 1 >> ' + path + vmstat_file + bytes_per_second +'_r_' +' &'
     global dstat_cmd
-    dstat_cmd ='dstat >> ' + path + dstat_file + bytes_per_second +' &'
+    dstat_cmd ='dstat >> ' + path + dstat_file + bytes_per_second +'_r_' +' &'
     global free_cmd
-    free_cmd ='free >> ' + path+free_file + bytes_per_second +' &'
+    free_cmd ='free >> ' + path+free_file + bytes_per_second +'_r_' +' &'
     global top_cmd
-    top_cmd ='top -c >> '+ path + top_file + bytes_per_second +' &'
+    top_cmd ='top -c >> '+ path + top_file + bytes_per_second +'_r_' +' &'
 
+def form_cmd_n(bytes_per_second):
+    bytes_per_second=str(bytes_per_second)
+    global iostat_cmd
+    iostat_cmd='iostat -dkxt 1 >> ' + path + iostat_file + bytes_per_second+'_n_' +' &'
+    global vmstat_cmd
+    vmstat_cmd ='vmstat 1 >> ' + path + vmstat_file + bytes_per_second +'_n_' +' &'
+    global dstat_cmd
+    dstat_cmd ='dstat >> ' + path + dstat_file + bytes_per_second +'_n_' +' &'
+    global free_cmd
+    free_cmd ='free >> ' + path+free_file + bytes_per_second +'_n_' +' &'
+    global top_cmd
+    top_cmd ='top -c >> '+ path + top_file + bytes_per_second +'_n_' +' &'
 
-def record_sys_status_to_log(bytes_per_second):
+def record_sys_status_to_log_r(bytes_per_second):
     bytes_per_second = str(bytes_per_second)
     mkdir_p(path)
-    touchFiles(bytes_per_second)
-    form_cmd(bytes_per_second)
+    touchFiles(bytes_per_second,'_r_')
+    form_cmd_r(bytes_per_second)
     print(iostat_cmd,vmstat_cmd,dstat_cmd,free_cmd)
-
+    subprocess.call(iostat_cmd, shell=True)
+    subprocess.call(vmstat_cmd, shell=True)
+    subprocess.call(dstat_cmd, shell=True)
+    subprocess.call(free_cmd, shell=True)
+    #subprocess.call(top_cmd, shell=True)
+def record_sys_status_to_log_n(bytes_per_second):
+    bytes_per_second = str(bytes_per_second)
+    mkdir_p(path)
+    touchFiles(bytes_per_second,'_n_')
+    form_cmd_n(bytes_per_second)
+    print(iostat_cmd,vmstat_cmd,dstat_cmd,free_cmd)
     subprocess.call(iostat_cmd, shell=True)
     subprocess.call(vmstat_cmd, shell=True)
     subprocess.call(dstat_cmd, shell=True)
@@ -85,19 +108,24 @@ def kill_recording_process():
     subprocess.call(free_kill, shell=True)
     #subprocess.call(top_kill, shell=True)
 
-
-
 def main():
+    if len(sys.argv) <= 1:
+	print("Usage: callRecordSubprocess -r <bytes/seconds> or -n <numbersOfMsg/second>")
+	sys.exit(-1)
+
     if sys.argv[1]=='-r':
 	bytes_per_second =int(sys.argv[2])
-	record_sys_status_to_log(bytes_per_second)
+	record_sys_status_to_log_r(bytes_per_second)
+    elif sys.argv[1]=='-n':
+	numbers_per_second =int(sys.argv[2])
+        record_sys_status_to_log_n(numbers_per_second)
     else:
-        record_sys_status_to_log(10086)
+	print("Usage: callRecordSubprocess -r <bytes/seconds> or -n <numbersOfMsg/second>")
+	sys.exit(-1)
+    
     #Run 5 mins
     time.sleep(300)
     kill_recording_process()
-
-
 
 if __name__ == "__main__":
   main()
