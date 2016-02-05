@@ -3,6 +3,7 @@ import subprocess
 import time
 import os
 import errno
+import sys
 
 path ='/var/log/td-agent/test_results/'
 
@@ -87,7 +88,7 @@ def kill_recording_process():
 
 
 def main():
-    if sys.argv[1]='-r':
+    if sys.argv[1]=='-r':
 	bytes_per_second =int(sys.argv[2])
 	record_sys_status_to_log(bytes_per_second)
     else:
