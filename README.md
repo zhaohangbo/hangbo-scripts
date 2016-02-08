@@ -3,77 +3,87 @@
 This benchmarks following architecture scenario:
 
 ```
-  Agent Node                                     Receiver Node
-  +-----------------------------------+          +-----------------+
-  | +-----------+      +-----------+  |          |  +-----------+  |
-  | |           |      |           |  |          |  |           |  |
-  | | Log File  +----->|  Fluentd  +--------------->|  Fluentd  |  |
-  | |           |      |           |  |          |  |           |  |
-  | +-----------+  in_tail ----- out_forward   in_forward  -----+  |
-  +-----------------------------------+          +-----------------+
+  Agent Node                                        Receiver Node
+  +---------------------------------------------+             +---------------------+
+  | +---------------+      +-----------------+  |             |  +---------------+  |
+  | |  	Python 	    |      |                 |  |             |  |               |  |
+  | |	Script      +----->|     FluentD     +--------------->   |  FluentD      |  |
+  | |  	Posts	    |      |                 |  |             |  |               |  |
+  | +---------------+   in_http-------out_secure_forward  in_secure_forward------+  |
+  +---------------------------------------------+             +---------------------+
 ```
 
-## Setup Fluentd Receiver
-
-Assume ruby is installed
+## Agent==  (in_http —> FluentD —>out_secure_forward)
 
 ```
-git clone https://github.com/fluent/fluentd-benchmark
-cd fluentd-benchmark/one_forward
-bundle
-bundle exec fluentd -c receiver.conf
+Agent Side: Two methods to post metrics to in_http
+1.  postMetrics.py   -r 1000  ,(1000 bytes/sec)
+2.  postMetrics.py  -n 10 -json '{"names": ["J.M.Zeus", “Hangbo"], "years": [25, 24]}'  ,(10 msgs/sec)
+```
+## Receiver= (in_secure_forward —> FluentD —>out_file)
+```
+Server Side: Two methods to record results 
+1.  callRecordSubprocess.py -r 1000  ,(corresponding to 'postMetrics.py   -r 1000')
+2.  callRecordSubprocess.py -n 10    ,(corresponding to 'postMetrics.py  -n 10 -json')
+```
+## Auto Test
+
+Step 1: git clone this repository both on Agent and Receiver side
+
+Step 2: Test Cases
+```
+list_record_cases in runAllCases.py
+list_record_cases in runAllCases.py
+```
+Step 3: Auto Test Commands
+```
+On the agent    side: ./runAllCases.py -as_agent
+On the receiver side: ./runAllCases.py -as_receiver
 ```
 
-## Setup Fluentd Agent
 
-Assume ruby is installed
-
+Step 4: Results Location
 ```
-git clone https://github.com/fluent/fluentd-benchmark
-cd fluentd-benchmark/one_forward
-bundle
-bundle exec fluentd -c agent.conf
-```
+Correctness Records location:
+  /var/log/td-agent/trafic.basic.*.log
 
-## Run benchmark tool and measure
-
-Run at Fluentd agent server. 
-
-This tool outputs logs to `dummy.log`, and Fluentd agent reads it and sends data to a receiver. 
-
-```
-cd fluentd-benchmark/one_forward
-bundle exec dummer -c dummer.conf
+Performance Records location:
+  /var/log/td-agent/test_results/*
 ```
 
-You may increase the rate (messages/sec) of log generation by -r option to benchmark. 
 
+Step 5: Add Your Own Test Cases:
 ```
-bundle exec dummer -c dummer.conf -r 100000
-```
-
-You should see an output on Fluentd receiver as followings. This tells you the performance of fluentd processing. 
-
-```
-2014-02-20 17:20:55 +0900 [info]: plugin:out_flowcounter_simple count:500       indicator:num   unit:second
-2014-02-20 17:20:56 +0900 [info]: plugin:out_flowcounter_simple count:500       indicator:num   unit:second
-2014-02-20 17:20:57 +0900 [info]: plugin:out_flowcounter_simple count:500       indicator:num   unit:second
+Change the cases in runAllCases.py.
+For example, you’d like to test sending 10086 bytes/sec metrics from Agent to Receiver,
+1.add case "./postMetrics.py   -r  10086” 
+  to list_record_cases in runAllCases.py
+2.add case "./callRecordSubprocess.py -r 10086”
+  to list_record_cases in runAllCases.py
 ```
 
-You may use `iostat -dkxt 1`, `vmstat 1`, `top -c`, `free`, or `dstat` commands to measure system resources. 
+
+You may use linux commands `iostat -dkxt 1`, `vmstat 1`, `top -c`, `free`, or `dstat` to measure system resources. 
 
 ## Sample Result
 
 This is a sample result running on my environement
 
 
-Machine Spec
-
+Agent Machine Spec
 ```
-CPU	Xeon E5-2670 2.60GHz x 2 (32 Cores)
-Memory	24G
-Disk	300G(10000rpm) x 2 [SAS-HDD]
-OS CentOS release 6.2 (Final)
+CPU	  : Intel(R) Core(TM) i7-4850HQ CPU @ 2.30GHz
+Memory:	2G
+Disk	: 40G(10000rpm) x 2 [SAS-HDD]
+OS    : Ubuntu 14.04.3 LTS	trusty
+```
+
+Receiver Machine Spec
+```
+CPU	  : Intel(R) Core(TM) i7-4850HQ CPU @ 2.30GHz
+Memory:	1G
+Disk	: 40G(10000rpm) x 2 [SAS-HDD]
+OS    : Ubuntu 14.04.3 LTS	trusty
 ```
 
 Result
@@ -81,14 +91,14 @@ Result
 
 |                             |                       | Agent   |             |         |
 |-----------------------------|-----------------------|---------|-------------|---------|
-| rate of writing (lines/sec) | reading (lines/sec)   | CPU (%) | Memory (kB) | Remarks |
-| 10                          | 10                    | 0.2     | 29304       |         |
-| 100                         | 100                   | 0.3     | 35812       |         |
-| 1000                        | 1000                  | 1.3     | 37864       |         |
-| 10000                       | 10000                 | 6.6     | 39912       |         |
-| 100000                      | 100000                | 62      | 39912       |         |
-| 200000                      | 157148                | 100.4   | 36280       | MAX     |
-| 300000                      | N/A                   |         |             |         |
-| 400000                      | N/A                   |         |             |         |
-| 5247047                     | N/A                   |         |             | MAX of dummer tool        |
+| rate of writing (msgs/sec)  | reading (msgs/sec)    | CPU (%) | Memory (kB) | Remarks |
+| 10                          | 10                    |         |             |         |
+|                             |                       |         |             |         |
+|                             |                       |         |             |         |
+|                             |                       |         |             |         |
+|                             |                       |         |             |         |
+|                             |                       |         |             | MAX     |
+|                             | N/A                   |         |             |         |
+|                             | N/A                   |         |             |         |
+|                             | N/A                   |         |             | MAX     |
 
