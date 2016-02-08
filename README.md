@@ -1,141 +1,94 @@
-Apache Kafka
-=================
-See our [web site](http://kafka.apache.org) for details on the project.
+# Fluentd benchmark - forward
 
-You need to have [Gradle](http://www.gradle.org/installation) and [Java](http://www.oracle.com/technetwork/java/javase/downloads/index.html) installed.
+This benchmarks following architecture scenario:
 
-Kafka requires Gradle 2.0 or higher.
+```
+  Agent Node                                     Receiver Node
+  +-----------------------------------+          +-----------------+
+  | +-----------+      +-----------+  |          |  +-----------+  |
+  | |           |      |           |  |          |  |           |  |
+  | | Log File  +----->|  Fluentd  +--------------->|  Fluentd  |  |
+  | |           |      |           |  |          |  |           |  |
+  | +-----------+  in_tail ----- out_forward   in_forward  -----+  |
+  +-----------------------------------+          +-----------------+
+```
 
-Java 7 should be used for building in order to support both Java 7 and Java 8 at runtime.
+## Setup Fluentd Receiver
 
-### First bootstrap and download the wrapper ###
-    cd kafka_source_dir
-    gradle
+Assume ruby is installed
 
-Now everything else will work.
+```
+git clone https://github.com/fluent/fluentd-benchmark
+cd fluentd-benchmark/one_forward
+bundle
+bundle exec fluentd -c receiver.conf
+```
 
-### Building a jar and running it ###
-    ./gradlew jar  
+## Setup Fluentd Agent
 
-Follow instructions in http://kafka.apache.org/documentation.html#quickstart
+Assume ruby is installed
 
-### Building source jar ###
-    ./gradlew srcJar
+```
+git clone https://github.com/fluent/fluentd-benchmark
+cd fluentd-benchmark/one_forward
+bundle
+bundle exec fluentd -c agent.conf
+```
 
-### Building javadocs and scaladocs ###
-    ./gradlew javadoc
-    ./gradlew javadocJar # builds a jar from the javadocs
-    ./gradlew scaladoc
-    ./gradlew scaladocJar # builds a jar from the scaladocs
-    ./gradlew docsJar # builds both javadoc and scaladoc jar
+## Run benchmark tool and measure
 
-### Running unit tests ###
-    ./gradlew test
+Run at Fluentd agent server. 
 
-### Forcing re-running unit tests w/o code change ###
-    ./gradlew cleanTest test
+This tool outputs logs to `dummy.log`, and Fluentd agent reads it and sends data to a receiver. 
 
-### Running a particular unit test ###
-    ./gradlew -Dtest.single=RequestResponseSerializationTest core:test
+```
+cd fluentd-benchmark/one_forward
+bundle exec dummer -c dummer.conf
+```
 
-### Running a particular test method within a unit test ###
-    ./gradlew core:test --tests kafka.api.ProducerFailureHandlingTest.testCannotSendToInternalTopic
-    ./gradlew clients:test --tests org.apache.kafka.clients.MetadataTest.testMetadataUpdateWaitTime
+You may increase the rate (messages/sec) of log generation by -r option to benchmark. 
 
-### Running a particular unit test with log4j output ###
-Change the log4j setting in either `clients/src/test/resources/log4j.properties` or `core/src/test/resources/log4j.properties`
+```
+bundle exec dummer -c dummer.conf -r 100000
+```
 
-    ./gradlew -i -Dtest.single=RequestResponseSerializationTest core:test
+You should see an output on Fluentd receiver as followings. This tells you the performance of fluentd processing. 
 
-### Building a binary release gzipped tar ball ###
-    ./gradlew clean
-    ./gradlew releaseTarGz
+```
+2014-02-20 17:20:55 +0900 [info]: plugin:out_flowcounter_simple count:500       indicator:num   unit:second
+2014-02-20 17:20:56 +0900 [info]: plugin:out_flowcounter_simple count:500       indicator:num   unit:second
+2014-02-20 17:20:57 +0900 [info]: plugin:out_flowcounter_simple count:500       indicator:num   unit:second
+```
 
-The above command will fail if you haven't set up the signing key. To bypass signing the artifact, you can run:
+You may use `iostat -dkxt 1`, `vmstat 1`, `top -c`, `free`, or `dstat` commands to measure system resources. 
 
-    ./gradlew releaseTarGz -x signArchives
+## Sample Result
 
-The release file can be found inside `./core/build/distributions/`.
+This is a sample result running on my environement
 
-### Cleaning the build ###
-    ./gradlew clean
 
-### Running a task on a particular version of Scala (either 2.10.6 or 2.11.7) ###
-*Note that if building the jars with a version other than 2.10, you need to set the `SCALA_BINARY_VERSION` variable or change it in `bin/kafka-run-class.sh` to run the quick start.*
+Machine Spec
 
-You can pass either the major version (eg 2.11) or the full version (eg 2.11.7):
+```
+CPU	Xeon E5-2670 2.60GHz x 2 (32 Cores)
+Memory	24G
+Disk	300G(10000rpm) x 2 [SAS-HDD]
+OS CentOS release 6.2 (Final)
+```
 
-    ./gradlew -PscalaVersion=2.11 jar
-    ./gradlew -PscalaVersion=2.11 test
-    ./gradlew -PscalaVersion=2.11 releaseTarGz
+Result
 
-### Running a task for a specific project ###
-This is for `core`, `examples` and `clients`
 
-    ./gradlew core:jar
-    ./gradlew core:test
+|                             |                       | Agent   |             |         |
+|-----------------------------|-----------------------|---------|-------------|---------|
+| rate of writing (lines/sec) | reading (lines/sec)   | CPU (%) | Memory (kB) | Remarks |
+| 10                          | 10                    | 0.2     | 29304       |         |
+| 100                         | 100                   | 0.3     | 35812       |         |
+| 1000                        | 1000                  | 1.3     | 37864       |         |
+| 10000                       | 10000                 | 6.6     | 39912       |         |
+| 100000                      | 100000                | 62      | 39912       |         |
+| 200000                      | 157148                | 100.4   | 36280       | MAX     |
+| 300000                      | N/A                   |         |             |         |
+| 400000                      | N/A                   |         |             |         |
+| 5247047                     | N/A                   |         |             | MAX of dummer tool        |
 
-### Listing all gradle tasks ###
-    ./gradlew tasks
-
-### Building IDE project ####
-*Note that this is not strictly necessary (IntelliJ IDEA has good built-in support for Gradle projects, for example).*
-
-    ./gradlew eclipse
-    ./gradlew idea
-
-### Building the jar for all scala versions and for all projects ###
-    ./gradlew jarAll
-
-### Running unit tests for all scala versions and for all projects ###
-    ./gradlew testAll
-
-### Building a binary release gzipped tar ball for all scala versions ###
-    ./gradlew releaseTarGzAll
-
-### Publishing the jar for all version of Scala and for all projects to maven ###
-    ./gradlew uploadArchivesAll
-
-Please note for this to work you should create/update `~/.gradle/gradle.properties` and assign the following variables
-
-    mavenUrl=
-    mavenUsername=
-    mavenPassword=
-    signing.keyId=
-    signing.password=
-    signing.secretKeyRingFile=
-
-### Installing the jars to the local Maven repository ###
-    ./gradlew installAll
-
-### Building the test jar ###
-    ./gradlew testJar
-
-### Determining how transitive dependencies are added ###
-    ./gradlew core:dependencies --configuration runtime
-
-### Running checkstyle on the java code ###
-    ./gradlew checkstyleMain checkstyleTest
-
-This will most commonly be useful for automated builds where the full resources of the host running the build and tests
-may not be dedicated to Kafka's build.
-
-### Common build options ###
-
-The following options should be set with a `-D` switch, for example `./gradlew -Dorg.gradle.project.maxParallelForms=1 test`.
-
-* `org.gradle.project.mavenUrl`: sets the URL of the maven deployment repository (`file://path/to/repo` can be used to point to a local repository).
-* `org.gradle.project.maxParallelForks`: limits the maximum number of processes for each task.
-* `org.gradle.project.showStandardStreams`: shows standard out and standard error of the test JVM(s) on the console.
-* `org.gradle.project.skipSigning`: skips signing of artifacts.
-
-### Running in Vagrant ###
-
-See [vagrant/README.md](vagrant/README.md).
-
-### Contribution ###
-
-Apache Kafka is interested in building the community; we would welcome any thoughts or [patches](https://issues.apache.org/jira/browse/KAFKA). You can reach us [on the Apache mailing lists](http://kafka.apache.org/contact.html).
-
-To contribute follow the instructions here:
- * http://kafka.apache.org/contributing.html
