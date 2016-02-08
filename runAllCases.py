@@ -5,33 +5,39 @@ import subprocess
 
 
 list_post_cases=[
-'./postMetrics.py   -r 500',
-'./postMetrics.py   -r 1000',
-'./postMetrics.py   -r 1500',
-'./postMetrics.py   -r 2000',
-'./postMetrics.py   -r 2500',
 './postMetrics.py   -r 3000',
-'./postMetrics.py   -r 3500',
 './postMetrics.py   -r 4000',
-
 './postMetrics.py   -r 10000',
 './postMetrics.py   -r 20000',
-'./postMetrics.py   -r 30000'
+'./postMetrics.py   -r 30000',
+'./postMetrics.py   -r 40000',
+'./postMetrics.py   -r 50000',
+
+ """./postMetrics.py  -n 500 -json '{"names": ["J.J.", "April"], "years": [25, 29]}' """,
+ """./postMetrics.py  -n 1000 -json '{"names": ["J.J.", "April"], "years": [25, 29]}' """,
+ """./postMetrics.py  -n 1500 -json '{"names": ["J.J.", "April"], "years": [25, 29]}' """,
+ """./postMetrics.py  -n 2000 -json '{"names": ["J.J.", "April"], "years": [25, 29]}' """,
+ """./postMetrics.py  -n 3000 -json '{"names": ["J.J.", "April"], "years": [25, 29]}' """,
+ """./postMetrics.py  -n 4000 -json '{"names": ["J.J.", "April"], "years": [25, 29]}' """,
+ """./postMetrics.py  -n 5000 -json '{"names": ["J.J.", "April"], "years": [25, 29]}' """
 ]
 
 list_record_cases=[
-'./callRecordSubprocess.py -r 500',
-'./callRecordSubprocess.py -r 1000',
-'./callRecordSubprocess.py -r 1500',
-'./callRecordSubprocess.py -r 2000',
-'./callRecordSubprocess.py -r 2500',
 './callRecordSubprocess.py -r 3000',
-'./callRecordSubprocess.py -r 3500',
 './callRecordSubprocess.py -r 4000',
-
 './callRecordSubprocess.py -r 10000',
 './callRecordSubprocess.py -r 20000',
-'./callRecordSubprocess.py -r 30000'
+'./callRecordSubprocess.py -r 30000',
+'./callRecordSubprocess.py -r 40000',
+'./callRecordSubprocess.py -r 50000',
+
+'./callRecordSubprocess.py -n 500',
+'./callRecordSubprocess.py -n 1000',
+'./callRecordSubprocess.py -n 1500',
+'./callRecordSubprocess.py -n 2000',
+'./callRecordSubprocess.py -n 3000',
+'./callRecordSubprocess.py -n 4000',
+'./callRecordSubprocess.py -n 5000'
 ]
 def main():
   if len(sys.argv) <= 1:
