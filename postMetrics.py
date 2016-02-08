@@ -87,7 +87,7 @@ def post_metrics_numbers_per_second(numbers_per_second, intput_json_data):
     else:
         print('can not post'+numbers_per_second+'in 1 seconds , totally needs'+ str(1-ms_left/1000.0)+'seconds')
 
-path ='/var/log/td-agent/test_results/'
+path ='/var/log/td-agent/perf_results/'
 
 iostat_file='iostat.log'
 iostat_cmd='iostat -dkxt 1 >> '+path+iostat_file+' &'
