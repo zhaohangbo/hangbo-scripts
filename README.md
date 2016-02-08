@@ -13,14 +13,14 @@ This benchmarks following architecture scenario:
   +---------------------------------------------+             +---------------------+
 ```
 
-## Agent==  (in: http —> FluentD —>out: secure_forward)
+## Agent==  (in_http —> FluentD —>out_secure_forward)
 
 ```
 Agent Side: Two methods to post metrics to in_http
 1.  postMetrics.py   -r 1000  ,(1000 bytes/sec)
 2.  postMetrics.py  -n 10 -json '{"names": ["J.M.Zeus", “Hangbo"], "years": [25, 24]}'  ,(10 msgs/sec)
 ```
-## Receiver= (in: secure_forward —> FluentD —>out: file)
+## Receiver= (in_secure_forward —> FluentD —>out_file)
 ```
 Server Side: Two methods to record results 
 1.  callRecordSubprocess.py -r 1000  ,(corresponding to 'postMetrics.py   -r 1000')
