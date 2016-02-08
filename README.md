@@ -70,13 +70,20 @@ You may use linux commands `iostat -dkxt 1`, `vmstat 1`, `top -c`, `free`, or `d
 This is a sample result running on my environement
 
 
-Machine Spec
-
+Agent Machine Spec
 ```
-CPU	Xeon E5-2670 2.60GHz x 2 (32 Cores)
-Memory	24G
-Disk	300G(10000rpm) x 2 [SAS-HDD]
-OS CentOS release 6.2 (Final)
+CPU	  : Intel(R) Core(TM) i7-4850HQ CPU @ 2.30GHz
+Memory:	2G
+Disk	: 40G(10000rpm) x 2 [SAS-HDD]
+OS    : Ubuntu 14.04.3 LTS	trusty
+```
+
+Receiver Machine Spec
+```
+CPU	  : Intel(R) Core(TM) i7-4850HQ CPU @ 2.30GHz
+Memory:	1G
+Disk	: 40G(10000rpm) x 2 [SAS-HDD]
+OS    : Ubuntu 14.04.3 LTS	trusty
 ```
 
 Result
