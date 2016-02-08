@@ -1,12 +1,28 @@
-Apache Kafka
+Fluentd Test (Performace and Correctness)
 =================
-See our [web site](http://kafka.apache.org) for details on the project.
+This project benchmarks the most basic architecture scenario 
+                Agent Node                         Receiver Node
+  +-----------------------------------+          +-----------------+
+  | +-----------+      +-----------+  |          |  +-----------+  |
+  | |  	Python 	|      |           |  |          |  |           |  |
+  | |	Script  +----->|  FluentD  +--------------->|  FluentD  |  |
+  | |  	Posts	|      |           |  |          |  |           |  |
+  | +-----------+  in_http ----- out_forward   in_forward  -----+  |
+  +-----------------------------------+          +-----------------+
 
-You need to have [Gradle](http://www.gradle.org/installation) and [Java](http://www.oracle.com/technetwork/java/javase/downloads/index.html) installed.
+### Agent  (in: http —> FluentD —>out: secure_forward)
 
-Kafka requires Gradle 2.0 or higher.
+./postMetrics.py   -r 1000
 
-Java 7 should be used for building in order to support both Java 7 and Java 8 at runtime.
+./postMetrics.py  -n 10 -json '{"names": ["J.M.Zeus", “Hangbo"], "years": [25, 24]}'
+
+### Receiver (in: secure_forward —> FluentD —>out: file)
+
+./callRecordSubprocess.py -r 500
+./callRecordSubprocess.py -r 1000
+./callRecordSubprocess.py -r 1500
+./callRecordSubprocess.py -r 2000
+
 
 ### First bootstrap and download the wrapper ###
     cd kafka_source_dir
